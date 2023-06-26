@@ -39,7 +39,11 @@ class Structure:
         if measurer is not None:
             self.measurer = QuadMeasurer()
         if visualizer is not None:
-            self.visualizer = SegDetectorVisualizer()
+            if 'eager_show' in visualizer:
+                eager_show = visualizer['eager_show']
+                self.visualizer = SegDetectorVisualizer(eager_show=eager_show)
+            else:
+                self.visualizer = SegDetectorVisualizer()
 
 
 class Train:

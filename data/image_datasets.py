@@ -49,7 +49,8 @@ class ImageDataset(data.Dataset):
                 self.image_paths += image_path
                 self.gt_paths += gt_path
         else:
-            path = os.path.join(self.data_dir[0], 'train') if self.is_training else os.path.join(self.data_dir[0], 'train')
+            subpath = 'train' if self.is_training else 'test'
+            path = os.path.join(self.data_dir[0], subpath)
             files = os.listdir(path)
             for file in files:
                 fid, ext = file.split('.')

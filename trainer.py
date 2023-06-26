@@ -16,6 +16,7 @@ class Trainer:
         self.total = 0
         self.scheduler = experiment.train.scheduler
         self.args = experiment.args
+        self.structure = experiment.structure
 
     def init_device(self):
         if torch.cuda.is_available():
@@ -129,27 +130,26 @@ class Trainer:
 
             self.logger.report_time('Logging')
 
-    def validate(self, validation_loaders, model, epoch, step):
+    def validate(self, loader, model, epoch, step):
         all_matircs = {}
         model.eval()
-        for name, loader in validation_loaders.items():
-            if self.experiment.validation.visualize:
-                metrics, vis_images = self.validate_step(
+        name = loader.dataset.dataset_name
+        if self.experiment.validation.visualize:
+            metrics, vis_images = self.validate_step(
                     loader, model, True)
-                self.logger.images(
+            self.logger.images(
                     os.path.join('vis', name), vis_images, step)
+        else:
+            metrics, vis_images = self.validate_step(loader, model, False)
+        for _key, metric in metrics.items():
+            key = name + '/' + _key
+            if key in all_matircs:
+                all_matircs[key].update(metric.val, metric.count)
             else:
-                metrics, vis_images = self.validate_step(loader, model, False)
-            for _key, metric in metrics.items():
-                key = name + '/' + _key
-                if key in all_matircs:
-                    all_matircs[key].update(metric.val, metric.count)
-                else:
-                    all_matircs[key] = metric
-
+                 all_matircs[key] = metric
         for key, metric in all_matircs.items():
             self.logger.info('%s : %f (%d)' % (key, metric.avg, metric.count))
-        self.logger.metrics(epoch, self.steps, all_matircs)
+        self.logger.metrics(epoch, step, all_matircs)
         model.train()
         return all_matircs
 
@@ -157,15 +157,14 @@ class Trainer:
         raw_metrics = []
         vis_images = dict()
         for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
-            pred = model.forward(batch, training=False)
+            pred = model.forward(batch)
             output = self.structure.representer.represent(batch, pred)
-            raw_metric, interested = self.structure.measurer.validate_measure(
-                batch, output)
+            raw_metric = self.structure.measurer.validate_measure(batch, output)
             raw_metrics.append(raw_metric)
 
             if visualize and self.structure.visualizer:
                 vis_image = self.structure.visualizer.visualize(
-                    batch, output, interested)
+                    batch, output, pred)
                 vis_images.update(vis_image)
         metrics = self.structure.measurer.gather_measure(
             raw_metrics, self.logger)

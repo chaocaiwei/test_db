@@ -12,6 +12,8 @@ from experiment import Experiment
 
 path = 'experiments/seg_detector/totaltext_resnet50_deform_thre.yaml'
 
+resum_path = '/Users/myself/Desktop/final'
+
 
 def main():
     parser = argparse.ArgumentParser(description='Text Recognition Training')

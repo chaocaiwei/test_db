@@ -76,7 +76,7 @@ class SegDetectorRepresenter:
             # _, sside = self.get_mini_boxes(contour)
             # if sside < self.min_size:
             #     continue
-            score = self.box_score_fast(pred, points.reshape(-1, 2))
+            score = self.box_score_fast(pred[0], points.reshape(-1, 2))
             if self.box_thresh > score:
                 continue
 
@@ -116,9 +116,8 @@ class SegDetectorRepresenter:
             height, width = bitmap.shape[0], bitmap.shape[1]
         elif len(bitmap.shape) == 3:
             height, width = bitmap.shape[1], bitmap.shape[2]
-        contours, _ = cv2.findContours(
-            (bitmap * 255).astype(np.uint8),
-            cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+        contours, _ = cv2.findContours((bitmap * 255).astype(np.uint8)[0], cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         num_contours = min(len(contours), self.max_candidates)
         boxes = np.zeros((num_contours, 4, 2), dtype=np.int16)
         scores = np.zeros((num_contours,), dtype=np.float32)
@@ -126,10 +125,11 @@ class SegDetectorRepresenter:
         for index in range(num_contours):
             contour = contours[index]
             points, sside = self.get_mini_boxes(contour)
+
             if sside < self.min_size:
                 continue
             points = np.array(points)
-            score = self.box_score_fast(pred, points.reshape(-1, 2))
+            score = self.box_score_fast(pred[0], points.reshape(-1, 2))
             if self.box_thresh > score:
                 continue
 

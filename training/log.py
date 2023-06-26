@@ -154,7 +154,8 @@ class Logger:
 
     def images(self, prefix, image_dict, step):
         for name, image in image_dict.items():
-            self.add_image(prefix + '/' + name, image, step, dataformats='HWC')
+            dataformats = 'HWC' if len(image.shape) == 3 else 'HW'
+            self.add_image(prefix + '/' + name, image, step, dataformats=dataformats)
 
     def merge_save_images(self, name, images):
         for i, image in enumerate(images):

@@ -24,7 +24,7 @@ class SegDetectorVisualizer:
 
     def _visualize_heatmap(self, heatmap, canvas=None):
         if isinstance(heatmap, torch.Tensor):
-            heatmap = heatmap.cpu().numpy()
+            heatmap = heatmap.cpu().detach().numpy()
         heatmap = (heatmap[0] * 255).astype(np.uint8)
         if canvas is None:
             pred_image = heatmap
@@ -35,6 +35,8 @@ class SegDetectorVisualizer:
         return pred_image
 
     def single_visualize(self, batch, index, boxes, pred):
+        if len(batch['polygons']) == 0 or len(batch['polygons']) < index:
+            return {}
         image = batch['image'][index]
         polygons = batch['polygons'][index]
         if isinstance(polygons, torch.Tensor):
@@ -46,19 +48,21 @@ class SegDetectorVisualizer:
         mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
         image = (image.cpu().numpy() * std + mean).transpose(1, 2, 0) * 255
         pred_canvas = image.copy().astype(np.uint8)
-        pred_canvas = cv2.resize(pred_canvas, (original_shape[1], original_shape[0]))
+
+        w, h = original_shape[0], original_shape[1]
+        pred_canvas = cv2.resize(pred_canvas, (int(h), int(w)))
 
         if isinstance(pred, dict) and 'thresh' in pred:
             thresh = self._visualize_heatmap(pred['thresh'][index])
 
-        if isinstance(pred, dict) and 'thresh_binary' in pred:
-            thresh_binary = self._visualize_heatmap(pred['thresh_binary'][index])
+        if isinstance(pred, dict) and 'binary' in pred:
+            thresh_binary = self._visualize_heatmap(pred['binary'][index])
             MakeICDARData.polylines(self, thresh_binary, polygons, ignore_tags)
 
         for box in boxes:
             box = np.array(box).astype(np.int32).reshape(-1, 2)
             cv2.polylines(pred_canvas, [box], True, (0, 255, 0), 2)
-            if isinstance(pred, dict) and 'thresh_binary' in pred:
+            if isinstance(pred, dict) and 'binary' in pred:
                 cv2.polylines(thresh_binary, [box], True, (0, 255, 0), 1)
 
         if self.eager_show:
@@ -66,8 +70,8 @@ class SegDetectorVisualizer:
             if isinstance(pred, dict) and 'thresh' in pred:
                 webcv2.imshow(filename + ' thresh', cv2.resize(thresh, (1024, 1024)))
                 webcv2.imshow(filename + ' pred', cv2.resize(pred_canvas, (1024, 1024)))
-            if isinstance(pred, dict) and 'thresh_binary' in pred:
-                webcv2.imshow(filename + ' thresh_binary', cv2.resize(thresh_binary, (1024, 1024)))
+            if isinstance(pred, dict) and 'binary' in pred:
+                webcv2.imshow(filename + ' binary', cv2.resize(thresh_binary, (1024, 1024)))
             return {}
         else:
             if isinstance(pred, dict) and 'thresh' in pred:
