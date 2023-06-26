@@ -55,7 +55,7 @@ define:
             dataset: ^validate_data
             batch_size: 1
             num_workers: 8
-        visualize: true
+        visualize: false
         interval: 4500
         exempt: 1
 
