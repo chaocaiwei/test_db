@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: model
+            dir_path: output/td500
             save_interval: 18000
             signal_path: save
         scheduler:
