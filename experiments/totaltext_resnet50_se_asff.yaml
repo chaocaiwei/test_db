@@ -1,5 +1,5 @@
 import:
-    - 'experiments/base_td500.yaml'
+    - 'experiments/base_totaltext.yaml'
 package: []
 define:
   - name: 'Experiment'
