@@ -10,7 +10,7 @@ from config import Configurable, State
 import math
 
 
-class ImageDataset(data.Dataset, Configurable):
+class ImageDataset(data.Dataset):
     r'''Dataset reading from images.
     Args:
         Processes: A series of Callable object, which accept as parameter and return the data dict,

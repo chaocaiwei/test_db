@@ -95,8 +95,6 @@ class BuiltinLearningRate:
         self.scheduler = getattr(lr_scheduler, self.klass)(
             optimizer, **self.kwargs)
 
-        lr_scheduler.OneCycleLR()
-
     def get_learning_rate(self, epoch, step=None):
         if self.scheduler is None:
             raise 'learning rate not ready(prepared with optimizer) '
@@ -104,4 +102,4 @@ class BuiltinLearningRate:
         # return value of gt_lr is a list,
         # where each element is the corresponding learning rate for a
         # paramater group.
-        return self.scheduler.get_lr()[0]
+        return self.scheduler.get_last_lr()[0]

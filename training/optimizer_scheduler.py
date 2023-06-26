@@ -13,7 +13,7 @@ class OptimizerScheduler(Configurable):
         r_cl = learning_rate['class'].split('.')[-1]
         epochs = learning_rate['epochs']
         learning_rate.pop('class')
-        getattr(training.learning_rate, r_cl)(**learning_rate)
+        self.learning_rate = getattr(training.learning_rate, r_cl)(**learning_rate)
 
         if 'lr' in cmd:
             self.optimizer_args['lr'] = cmd['lr']

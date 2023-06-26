@@ -192,27 +192,6 @@ class InfiniteOrderedSampler(Sampler):
         return self.limit_size
 
 
-class InfiniteDataLoader(Configurable, torch.utils.data.DataLoader):
-    dataset = State()
-    batch_size = State(default=256)
-    num_workers = State(default=10)
-    limit_size = State(default=2 ** 31)
-
-    def __init__(self, **kwargs):
-        self.load_all(**kwargs)
-
-        cmd = kwargs['cmd']
-        if 'batch_size' in cmd:
-            self.batch_size = cmd['batch_size']
-
-        sampler = InfiniteOrderedSampler(self.dataset, self.limit_size)
-
-        torch.utils.data.DataLoader.__init__(
-            self, self.dataset,
-            batch_size=self.batch_size, num_workers=self.num_workers,
-            sampler=sampler, worker_init_fn=default_worker_init_fn,
-        )
-
 
 class RandomSampleSampler(Sampler):
     def __init__(self, data_source, weights=None, size=2 ** 31):
@@ -232,34 +211,3 @@ class RandomSampleSampler(Sampler):
 
     def __len__(self):
         return self.size
-
-
-class RandomSampleDataLoader(Configurable, torch.utils.data.DataLoader):
-    datasets = State()
-    weights = State()
-    batch_size = State(default=256)
-    num_workers = State(default=10)
-    size = State(default=2 ** 31)
-
-    def __init__(self, **kwargs):
-        self.load_all(**kwargs)
-
-        cmd = kwargs['cmd']
-        if 'batch_size' in cmd:
-            self.batch_size = cmd['batch_size']
-
-        probs = []
-        for dataset, weight in zip(self.datasets, self.weights):
-            probs.append(np.full(len(dataset), weight / len(dataset)))
-
-        dataset = ConcatDataset(self.datasets)
-        probs = np.concatenate(probs)
-        assert(len(dataset) == len(probs))
-
-        sampler = RandomSampleSampler(dataset, probs, self.size)
-
-        torch.utils.data.DataLoader.__init__(
-            self, dataset,
-            batch_size=self.batch_size, num_workers=self.num_workers,
-            sampler=sampler, worker_init_fn=default_worker_init_fn,
-        )
