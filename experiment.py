@@ -127,5 +127,5 @@ class Experiment:
         visualize = validation['visualize']
         interval = validation['interval']
         exempt = validation['exempt']
-        self.validation = Validation(data_loader, visualize, interval, exempt)
+        self.validation = Validation(data_loader, visualize, interval, exempt, cmd)
 

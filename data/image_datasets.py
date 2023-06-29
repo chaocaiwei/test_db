@@ -30,31 +30,21 @@ class ImageDataset(data.Dataset):
                 self.data_list = self.gt_dir + 'train_list.txt'
             else:
                 self.data_list = self.gt_dir + 'test_list.txt'
+        if self.is_training:
+            self.data_dir = self.data_dir + 'train/'
+        else:
+            self.data_dir = self.data_dir + 'test/'
+
 
         self.image_paths = []
         self.gt_paths = []
         self.fids = []
+        self.targets = []
+        self.num_samples = 0
         self.get_all_samples()
 
     def get_all_samples(self):
-        if not self.dataset_name == 'TD500':
-            with open(self.data_list, 'r') as fid:
-                image_list = fid.readlines()
-            if self.is_training:
-                image_path = [self.data_dir + '/Images/Train/' + timg.strip() for timg in image_list]
-                gt_path = [self.gt_dir + '/train_gts/' + timg.strip() + '.txt' for timg in image_list]
-            else:
-                image_path = [self.data_dir + '/Images/Test/' + timg.strip() for timg in image_list]
-                print(self.data_dir)
-                if 'TD500' in self.data_list or 'total_text' in self.data_list:
-                    gt_path = [self.gt_dir + '/test_gts/' + timg.strip() + '.txt' for timg in image_list]
-                else:
-                    gt_path = [self.gt_dir + '/test_gts/' + 'gt_' + timg.strip().split('.')[0] + '.txt' for
-                               timg in image_list]
-            self.image_paths += image_path
-            self.gt_paths += gt_path
-
-        else:
+        if 'TD500' in self.data_dir:
             path = self.data_dir
             files = os.listdir(path)
             for file in files:
@@ -65,14 +55,28 @@ class ImageDataset(data.Dataset):
                     self.image_paths.append(img_path)
                     self.gt_paths.append(gt_path)
                     self.fids.append(fid)
-        self.num_samples = len(self.image_paths)
-        if self.dataset_name == "TD500":
             self.targets = []
             for path in self.gt_paths:
                 polys = self.get_msra_ann(path)
                 self.targets.append(polys)
         else:
+            with open(self.data_list, 'r') as fid:
+                image_list = fid.readlines()
+            if self.is_training:
+                image_path = [self.data_dir + 'Images/Train/' + timg.strip() for timg in image_list]
+                gt_path = [self.gt_dir + 'train_gts/' + timg.strip() + '.txt' for timg in image_list]
+            else:
+                image_path = [self.data_dir + 'Images/Test/' + timg.strip() for timg in image_list]
+                print(self.data_dir)
+                if 'TD500' in self.data_list or 'total_text' in self.data_list:
+                    gt_path = [self.gt_dir + 'test_gts/' + timg.strip() + '.txt' for timg in image_list]
+                else:
+                    gt_path = [self.gt_dir + 'test_gts/' + timg.strip().split('.')[0] + '.txt' for
+                               timg in image_list]
+            self.image_paths += image_path
+            self.gt_paths += gt_path
             self.targets = self.load_ann()
+        self.num_samples = len(self.image_paths)
         if self.is_training:
             assert len(self.image_paths) == len(self.targets)
 

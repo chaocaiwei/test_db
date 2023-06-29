@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--local_rank', dest='local_rank', default=0, type=int, help='Use distributed training')
     parser.add_argument('-g', '--num_gpus', dest='num_gpus', default=4, type=int, help='The number of accessible gpus')
     parser.add_argument('-o', '--out-path', dest='out_path', type=str, help='the path output model and workspace')
-    parser.add_argument('--data-dir', dest='data-dir', type=str)
+    parser.add_argument('--data-dir', dest='data_dir', type=str)
     parser.add_argument('--gt-dir', dest='gt_dir', type=str)
     parser.set_defaults(debug=False)
     parser.set_defaults(benchmark=True)

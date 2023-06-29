@@ -32,19 +32,14 @@ class DataLoader(torch.utils.data.DataLoader):
             self.batch_size = cmd['batch_size']
         if 'num_workers' in cmd:
             self.num_workers = cmd['num_workers']
-        if 'data-dir' in cmd:
-            self.data_dir = cmd['data-dir']
-        if 'gt_dir' in cmd:
-            self.gt_dir = cmd['gt_dir']
-        else:
-            self.gt_dir = None
+
 
         if self.collect_fn is None:
             self.collect_fn = torch.utils.data.dataloader.default_collate
         if self.shuffle is None:
             self.shuffle = self.is_training
 
-        self.dataset = self.load_datasets(dataset)
+        self.dataset = self.load_datasets(dataset, cmd)
 
         torch.utils.data.DataLoader.__init__(
                 self, self.dataset,
@@ -54,14 +49,18 @@ class DataLoader(torch.utils.data.DataLoader):
                 worker_init_fn=default_worker_init_fn)
         self.collect_fn = str(self.collect_fn)
 
-    def load_datasets(self, datasets):
+    def load_datasets(self, datasets, cmd):
         if 'processes' in datasets:
             processed = self.load_processes(datasets['processes'])
             dataset_name = datasets['dataset_name']
             data_dir = datasets['data_dir']
-            if self.data_dir is not None:
-                data_dir = self.data_dir
-            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, gt_dir=self.gt_dir)
+            if 'data_dir' in cmd:
+                data_dir = cmd['data_dir']
+            if 'gt_dir' in cmd:
+                gt_dir = cmd['gt_dir']
+            else:
+                gt_dir = None
+            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, gt_dir=gt_dir)
         return datasets
 
     def load_processes(self, processes):
