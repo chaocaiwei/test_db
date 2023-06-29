@@ -280,7 +280,7 @@ class MakeBorderMap(DataProcess):
 
 class NormalizeImage(DataProcess):
 
-    def __init__(self, arg):
+    def __init__(self, arg=None):
         pass
 
     RGB_MEAN = np.array([122.67891434, 116.66876762, 104.00698793])

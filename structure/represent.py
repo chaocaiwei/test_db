@@ -30,7 +30,10 @@ class SegDetectorRepresenter:
             thresh: [if exists] thresh hold prediction with shape (N, 1, H, W)
             thresh_binary: [if exists] binarized with threshhold, (N, 1, H, W)
         '''
-        images = batch['image']
+        if isinstance(batch, dict):
+            images = batch['image']
+        else:
+            images = batch
         if isinstance(_pred, dict):
             pred = _pred[self.dest]
         else:

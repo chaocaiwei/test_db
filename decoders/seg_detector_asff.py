@@ -6,7 +6,7 @@ from backbones.asff import ASFFNetwork
 
 class SegDetectorAsff(nn.Module):
 
-    def __init__(self, pretrained=True, in_channels=[64, 128, 256, 512], inner_channels=256,
+    def __init__(self, in_channels=[64, 128, 256, 512], inner_channels=256,
                  k=10, bias=False, smooth=False, serial=False, istraining=True):
         super(SegDetectorAsff, self).__init__()
 

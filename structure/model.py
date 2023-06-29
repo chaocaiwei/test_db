@@ -67,7 +67,7 @@ class SegDetectorModel(nn.Module):
         data = data.float()
         pred = self.model(data)
 
-        if self.training:
+        if self.training and batch is dict:
             for key, value in batch.items():
                 if value is not None:
                     if hasattr(value, 'to'):

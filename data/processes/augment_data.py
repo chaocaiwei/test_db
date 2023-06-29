@@ -1,8 +1,5 @@
 import imgaug
-import numpy as np
 import imgaug.augmenters as iaa
-from config import State
-from .data_process import DataProcess
 import cv2
 import math
 

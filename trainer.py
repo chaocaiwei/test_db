@@ -58,7 +58,7 @@ class Trainer:
             self.total = len(train_data_loader)
 
             for batch in train_data_loader:
-
+                self.update_learning_rate(optimizer, epoch, self.steps)
                 self.logger.report_time("Data loading")
 
                 if self.experiment.validation and\
@@ -81,7 +81,7 @@ class Trainer:
                 self.steps += 1
                 self.logger.report_eta(self.steps, self.total, epoch)
 
-            self.update_learning_rate(optimizer, epoch, self.steps)
+
 
             epoch += 1
             if epoch > self.experiment.train.epochs:
