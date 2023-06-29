@@ -30,10 +30,6 @@ class ImageDataset(data.Dataset):
                 self.data_list = self.gt_dir + 'train_list.txt'
             else:
                 self.data_list = self.gt_dir + 'test_list.txt'
-        if self.is_training:
-            self.data_dir = self.data_dir + 'train/'
-        else:
-            self.data_dir = self.data_dir + 'test/'
 
 
         self.image_paths = []
@@ -45,6 +41,10 @@ class ImageDataset(data.Dataset):
 
     def get_all_samples(self):
         if 'TD500' in self.data_dir:
+            if self.is_training:
+                self.data_dir = self.data_dir + 'train/'
+            else:
+                self.data_dir = self.data_dir + 'test/'
             path = self.data_dir
             files = os.listdir(path)
             for file in files:
@@ -129,7 +129,11 @@ class ImageDataset(data.Dataset):
             index = index % self.num_samples
         data = {}
         image_path = self.image_paths[index]
-        img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype('float32')
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        if img is None:
+            print('image is none ', image_path)
+            return {'image': None, 'filename': image_path}
+        img = img.astype('float32')
         if self.is_training:
             data['filename'] = image_path
             data['data_id'] = image_path
