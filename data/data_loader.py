@@ -32,6 +32,12 @@ class DataLoader(torch.utils.data.DataLoader):
             self.batch_size = cmd['batch_size']
         if 'num_workers' in cmd:
             self.num_workers = cmd['num_workers']
+        if 'data-dir' in cmd:
+            self.data_dir = cmd['data-dir']
+        if 'gt_dir' in cmd:
+            self.gt_dir = cmd['gt_dir']
+        else:
+            self.gt_dir = None
 
         if self.collect_fn is None:
             self.collect_fn = torch.utils.data.dataloader.default_collate
@@ -53,11 +59,9 @@ class DataLoader(torch.utils.data.DataLoader):
             processed = self.load_processes(datasets['processes'])
             dataset_name = datasets['dataset_name']
             data_dir = datasets['data_dir']
-            if 'data_list' in datasets:
-                data_list = datasets['data_list']
-            else:
-                data_list = []
-            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, data_list=data_list)
+            if self.data_dir is not None:
+                data_dir = self.data_dir
+            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, gt_dir=self.gt_dir)
         return datasets
 
     def load_processes(self, processes):

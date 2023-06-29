@@ -17,10 +17,9 @@ class ImageDataset(data.Dataset):
             typically inherrited the `DataProcess`(data/processes/data_process.py) class.
     '''
 
-    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, data_list=None, gt_dir=None, processes=[]):
+    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, gt_dir=None, processes=[]):
         self.dataset_name = dataset_name
         self.data_dir = data_dir
-        self.data_list = data_list
         self.processes = processes
         self.is_training = is_training
         self.debug = debug

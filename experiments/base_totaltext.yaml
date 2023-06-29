@@ -5,7 +5,7 @@ package:
 define:
   - name: train_data
     class: ImageDataset
-    dataset_name: 'TD500'
+    dataset_name: 'TotalText'
     data_dir: './datasets/total_text/'
     data_list: './datasets/total_text/train_list.txt'
     gt_dir: './datasets/total_text/'
@@ -29,7 +29,7 @@ define:
 
   - name: validate_data
     class: ImageDataset
-    dataset_name: 'TD500'
+    dataset_name: 'TotalText'
     data_dir: './datasets/total_text/'
     data_list: './datasets/total_text/test_list.txt'
     gt_dir: './datasets/total_text/'
