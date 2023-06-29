@@ -6,8 +6,7 @@ define:
   - name: train_data
     class: ImageDataset
     dataset_name: 'TD500'
-    data_dir:
-        - './datasets/MSRA-TD500/'
+    data_dir: './datasets/MSRA-TD500/train/'
     processes:
         - class: AugmentDetectionData
           augmenter_args:
@@ -29,8 +28,7 @@ define:
   - name: validate_data
     class: ImageDataset
     dataset_name: 'TD500'
-    data_dir:
-        - './datasets/MSRA-TD500/'
+    data_dir: './datasets/MSRA-TD500/test/'
     processes:
         - class: AugmentDetectionData
           augmenter_args:

@@ -17,13 +17,14 @@ class ImageDataset(data.Dataset):
             typically inherrited the `DataProcess`(data/processes/data_process.py) class.
     '''
 
-    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, data_list=None, processes=[]):
+    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, data_list=None, gt_dir=None, processes=[]):
         self.dataset_name = dataset_name
         self.data_dir = data_dir
         self.data_list = data_list
         self.processes = processes
         self.is_training = is_training
         self.debug = debug
+        self.gt_dir = gt_dir
 
         self.image_paths = []
         self.gt_paths = []
@@ -32,25 +33,24 @@ class ImageDataset(data.Dataset):
 
     def get_all_samples(self):
         if not self.dataset_name == 'TD500':
-            for i in range(len(self.data_dir)):
-                with open(self.data_list[i], 'r') as fid:
-                    image_list = fid.readlines()
-                if self.is_training:
-                    image_path = [self.data_dir[i] + '/train_images/' + timg.strip() for timg in image_list]
-                    gt_path = [self.data_dir[i] + '/train_gts/' + timg.strip() + '.txt' for timg in image_list]
+            with open(self.data_list, 'r') as fid:
+                image_list = fid.readlines()
+            if self.is_training:
+                image_path = [self.data_dir + '/train_images/' + timg.strip() for timg in image_list]
+                gt_path = [self.gt_dir + '/train_gts/' + timg.strip() + '.txt' for timg in image_list]
+            else:
+                image_path = [self.data_dir + '/test_images/' + timg.strip() for timg in image_list]
+                print(self.data_dir)
+                if 'TD500' in self.data_list or 'total_text' in self.data_list:
+                    gt_path = [self.gt_dir + '/test_gts/' + timg.strip() + '.txt' for timg in image_list]
                 else:
-                    image_path = [self.data_dir[i] + '/test_images/' + timg.strip() for timg in image_list]
-                    print(self.data_dir[i])
-                    if 'TD500' in self.data_list[i] or 'total_text' in self.data_list[i]:
-                        gt_path = [self.data_dir[i] + '/test_gts/' + timg.strip() + '.txt' for timg in image_list]
-                    else:
-                        gt_path = [self.data_dir[i] + '/test_gts/' + 'gt_' + timg.strip().split('.')[0] + '.txt' for
-                                   timg in image_list]
-                self.image_paths += image_path
-                self.gt_paths += gt_path
+                    gt_path = [self.gt_dir + '/test_gts/' + 'gt_' + timg.strip().split('.')[0] + '.txt' for
+                               timg in image_list]
+            self.image_paths += image_path
+            self.gt_paths += gt_path
+
         else:
-            subpath = 'train' if self.is_training else 'test'
-            path = os.path.join(self.data_dir[0], subpath)
+            path = self.data_dir
             files = os.listdir(path)
             for file in files:
                 fid, ext = file.split('.')
