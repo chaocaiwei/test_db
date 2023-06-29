@@ -26,6 +26,12 @@ class ImageDataset(data.Dataset):
         self.debug = debug
         self.gt_dir = gt_dir
 
+        if self.gt_dir is not None:
+            if self.is_training:
+                self.data_list = self.gt_dir + 'train_list.txt'
+            else:
+                self.data_list = self.gt_dir + 'test_list.txt'
+
         self.image_paths = []
         self.gt_paths = []
         self.fids = []
@@ -36,10 +42,10 @@ class ImageDataset(data.Dataset):
             with open(self.data_list, 'r') as fid:
                 image_list = fid.readlines()
             if self.is_training:
-                image_path = [self.data_dir + '/train_images/' + timg.strip() for timg in image_list]
+                image_path = [self.data_dir + '/Images/Train/' + timg.strip() for timg in image_list]
                 gt_path = [self.gt_dir + '/train_gts/' + timg.strip() + '.txt' for timg in image_list]
             else:
-                image_path = [self.data_dir + '/test_images/' + timg.strip() for timg in image_list]
+                image_path = [self.data_dir + '/Images/Test/' + timg.strip() for timg in image_list]
                 print(self.data_dir)
                 if 'TD500' in self.data_list or 'total_text' in self.data_list:
                     gt_path = [self.gt_dir + '/test_gts/' + timg.strip() + '.txt' for timg in image_list]
