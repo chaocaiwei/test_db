@@ -64,6 +64,9 @@ class Train:
         dir_path = model_saver['dir_path']
         save_interval = model_saver['save_interval']
         signal_path = model_saver['signal_path']
+        if 'out_path' in cmd and cmd['out_path'] is not None:
+            dir_path = cmd['out_path'] + dir_path
+            signal_path = cmd['out_path'] + signal_path
         self.model_saver = ModelSaver(dir_path, save_interval, signal_path)
 
         optimizer = scheduler['optimizer']
@@ -114,7 +117,10 @@ class Experiment:
         verbose = log['verbose']
         level = log['level']
         log_interval = log['log_interval']
-        self.logger = Logger(name=exp, verbose=verbose, level=level, log_interval=log_interval)
+        log_dir = 'workspace'
+        if 'out_path' in cmd and cmd['out_path'] is not None:
+            log_dir = cmd['out_path'] + log_dir
+        self.logger = Logger(name=exp, verbose=verbose, log_dir=log_dir, level=level, log_interval=log_interval)
 
         validation = args['validation']
         data_loader = validation['data_loader']
