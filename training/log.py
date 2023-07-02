@@ -6,14 +6,12 @@ import time
 from datetime import datetime
 
 from tensorboardX import SummaryWriter
-
 import yaml
 import cv2
 import numpy as np
 
 
 class Logger:
-
     SUMMARY_DIR_NAME = 'summaries'
     VISUALIZE_NAME = 'visualize'
     LOG_FILE_NAME = 'output.log'
@@ -28,22 +26,15 @@ class Logger:
         self.level = level
         self.log_interval = log_interval
 
-        if not os.path.exists(self.database_dir):
-            os.makedirs(self.database_dir)
+        self._make_storage()
 
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
-
-        self._make_storage()
-
-        if self.verbose:
-            print('Initializing log dir for', self.log_dir)
 
         self.message_logger = self._init_message_logger()
 
         summary_path = os.path.join(self.log_dir, self.SUMMARY_DIR_NAME)
         self.tf_board_logger = SummaryWriter(summary_path)
-
 
         self.metrics_writer = open(os.path.join(
             self.log_dir, self.METRICS_FILE_NAME), 'at')
@@ -54,6 +45,12 @@ class Logger:
         self.eta_time = None
 
     def _make_storage(self):
+        if not os.path.exists(self.database_dir):
+            os.makedirs(self.database_dir)
+
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
+
         application = os.path.basename(os.getcwd())
         storage_dir = os.path.join(
             self.database_dir, self.log_dir, application)
@@ -61,6 +58,9 @@ class Logger:
             os.makedirs(storage_dir)
         if not os.path.exists(self.log_dir):
             os.symlink(storage_dir, self.log_dir)
+
+    def save_dir(self, dir_name):
+        return os.path.join(self.log_dir, dir_name)
 
     def _init_message_logger(self):
         message_logger = logging.getLogger('messages')
@@ -81,14 +81,9 @@ class Logger:
         message_logger.addHandler(file_handler)
         return message_logger
 
-    def save_dir(self, dir_name):
-        return os.path.join(self.log_dir, dir_name)
-
     def report_time(self, name: str):
         if self.verbose:
-            timec = time.time() - self.timestamp
-            str_t = name + " time :" + str(timec)
-            self.message_logger.info(str_t)
+            self.info(name + " time :" + str(time.time() - self.timestamp))
             self.timestamp = time.time()
 
     def report_eta(self, steps, total, epoch):
@@ -154,8 +149,7 @@ class Logger:
 
     def images(self, prefix, image_dict, step):
         for name, image in image_dict.items():
-            dataformats = 'HWC' if len(image.shape) == 3 else 'HW'
-            self.add_image(prefix + '/' + name, image, step, dataformats=dataformats)
+            self.add_image(prefix + '/' + name, image, step, dataformats='HWC')
 
     def merge_save_images(self, name, images):
         for i, image in enumerate(images):

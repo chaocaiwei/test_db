@@ -2,11 +2,20 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from backbones.senet import SENet
+import torch.utils.model_zoo as model_zoo
 
 __all__ = ['ResNet', 'resnet50_se_net']
 
 se_reduction = 16
 
+
+model_urls = {
+    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+}
 
 class BottleNeckSE(nn.Module):
     expansion = 4
@@ -87,6 +96,11 @@ class ResNet(nn.Module):
         return x2, x3, x4, x5
 
 
-def resnet50_se_net():
+def resnet50_se_net(pretrained=True):
     model = ResNet(BottleNeckSE, [3, 4, 6, 3])
+
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(
+            model_urls['resnet50']), strict=False)
+
     return model
