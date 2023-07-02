@@ -211,7 +211,8 @@ class AverageMeter(object):
         self.val = val
         self.sum += val * n
         self.count += n
-        self.avg = self.sum / self.count
+        if self.count > 0:
+            self.avg = self.sum / self.count
         return self
 
 
@@ -233,12 +234,16 @@ class QuadMeasurer:
         results = []
         gt_polyons_batch = batch['polygons']
         ignore_tags_batch = batch['ignore_tags']
-        pred_polygons_batch = np.array(output[0])
+        pred_polygons_batch = np.array(output[0], dtype=object)
         pred_scores_batch = np.array(output[1])
         for polygons, pred_polygons, pred_scores, ignore_tags in\
                 zip(gt_polyons_batch, pred_polygons_batch, pred_scores_batch, ignore_tags_batch):
-            gt = [dict(points=polygons[i], ignore=ignore_tags[i])
-                  for i in range(len(polygons))]
+            if ignore_tags == 0 or len(ignore_tags) == 0:
+                gt = [dict(points=polygons[i], ignore=[])
+                      for i in range(len(polygons))]
+            else:
+                gt = [dict(points=polygons[i], ignore=ignore_tags[i])
+                      for i in range(len(polygons))]
             if is_output_polygon:
                 pred = [dict(points=pred_polygons[i])
                         for i in range(len(pred_polygons))]
