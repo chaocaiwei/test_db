@@ -106,8 +106,7 @@ class Trainer:
         pred = model.forward(batch)
         results = self.experiment.structure.loss(pred, batch)
         if len(results) == 2:
-            l, pred = results
-            metrics = {}
+            l, metrics = results
         elif len(results) == 3:
             l, pred, metrics = results
 
