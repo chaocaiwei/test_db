@@ -2,21 +2,26 @@ import os
 
 import torch
 from tqdm import tqdm
+
 from experiment import Experiment
+
 
 class Trainer:
     def __init__(self, experiment: Experiment):
         self.init_device()
 
         self.experiment = experiment
-        self.model = experiment.structure.model
+        self.structure = experiment.structure
         self.logger = experiment.logger
         self.model_saver = experiment.train.model_saver
-        self.current_lr = 0
-        self.total = 0
-        self.scheduler = experiment.train.scheduler
         self.args = experiment.args
-        self.structure = experiment.structure
+
+        # FIXME: Hack the save model path into logger path
+        self.model_saver.dir_path = self.logger.save_dir(
+            self.model_saver.dir_path)
+        self.current_lr = 0
+
+        self.total = 0
 
     def init_device(self):
         if torch.cuda.is_available():
@@ -24,8 +29,12 @@ class Trainer:
         else:
             self.device = torch.device('cpu')
 
+    def init_model(self):
+        return self.experiment.structure.model
+
     def update_learning_rate(self, optimizer, epoch, step):
-        lr = self.experiment.train.scheduler.learning_rate.get_learning_rate(epoch, step)
+        lr = self.experiment.train.scheduler.learning_rate.get_learning_rate(
+            epoch, step)
 
         for group in optimizer.param_groups:
             group['lr'] = lr
@@ -34,7 +43,7 @@ class Trainer:
     def train(self):
         self.logger.report_time('Start')
         self.logger.args(self.args)
-        model = self.model
+        model = self.init_model()
         train_data_loader = self.experiment.train.data_loader
         if self.experiment.validation:
             validation_loaders = self.experiment.validation.data_loaders
@@ -47,7 +56,8 @@ class Trainer:
             self.steps = epoch * self.total + iter_delta
 
         # Init start epoch and iter
-        optimizer = self.experiment.train.scheduler.create_optimizer(model.parameters())
+        optimizer = self.experiment.train.scheduler.create_optimizer(
+            model.parameters())
 
         self.logger.report_time('Init')
 
@@ -80,8 +90,6 @@ class Trainer:
 
                 self.steps += 1
                 self.logger.report_eta(self.steps, self.total, epoch)
-
-
 
             epoch += 1
             if epoch > self.experiment.train.epochs:
@@ -130,26 +138,27 @@ class Trainer:
 
             self.logger.report_time('Logging')
 
-    def validate(self, loader, model, epoch, step):
+    def validate(self, validation_loaders, model, epoch, step):
         all_matircs = {}
         model.eval()
-        name = loader.dataset.dataset_name
-        if self.experiment.validation.visualize:
-            metrics, vis_images = self.validate_step(
+        for name, loader in validation_loaders.items():
+            if self.experiment.validation.visualize:
+                metrics, vis_images = self.validate_step(
                     loader, model, True)
-            self.logger.images(
+                self.logger.images(
                     os.path.join('vis', name), vis_images, step)
-        else:
-            metrics, vis_images = self.validate_step(loader, model, False)
-        for _key, metric in metrics.items():
-            key = name + '/' + _key
-            if key in all_matircs:
-                all_matircs[key].update(metric.val, metric.count)
             else:
-                 all_matircs[key] = metric
+                metrics, vis_images = self.validate_step(loader, model, False)
+            for _key, metric in metrics.items():
+                key = name + '/' + _key
+                if key in all_matircs:
+                    all_matircs[key].update(metric.val, metric.count)
+                else:
+                    all_matircs[key] = metric
+
         for key, metric in all_matircs.items():
             self.logger.info('%s : %f (%d)' % (key, metric.avg, metric.count))
-        self.logger.metrics(epoch, step, all_matircs)
+        self.logger.metrics(epoch, self.steps, all_matircs)
         model.train()
         return all_matircs
 
@@ -157,14 +166,15 @@ class Trainer:
         raw_metrics = []
         vis_images = dict()
         for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
-            pred = model.forward(batch)
+            pred = model.forward(batch, training=False)
             output = self.structure.representer.represent(batch, pred)
-            raw_metric = self.structure.measurer.validate_measure(batch, output)
+            raw_metric, interested = self.structure.measurer.validate_measure(
+                batch, output)
             raw_metrics.append(raw_metric)
 
             if visualize and self.structure.visualizer:
                 vis_image = self.structure.visualizer.visualize(
-                    batch, output, pred)
+                    batch, output, interested)
                 vis_images.update(vis_image)
         metrics = self.structure.measurer.gather_measure(
             raw_metrics, self.logger)

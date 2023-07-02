@@ -61,7 +61,7 @@ define:
 
     logger:
         class: Logger
-        verbose: true
+        verbose: false
         level: info
         log_interval: 450
 

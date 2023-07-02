@@ -1,12 +1,10 @@
-from config import Configurable, State
 import os
 import torch
 
 
-class Checkpoint(Configurable):
+class Checkpoint:
 
     def __init__(self, start_epoch=0, start_iter=0, resume=None, cmd={}):
-
         self.start_epoch = start_epoch
         self.start_iter = start_iter
         self.resume = resume
