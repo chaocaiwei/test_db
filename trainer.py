@@ -165,7 +165,7 @@ class Trainer:
         raw_metrics = []
         vis_images = dict()
         for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
-            pred = model.forward(batch, training=False)
+            pred = model.forward(batch)
             output = self.structure.representer.represent(batch, pred)
             raw_metric, interested = self.structure.measurer.validate_measure(
                 batch, output)
