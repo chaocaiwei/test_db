@@ -6,15 +6,23 @@ import pyclipper
 
 class SegDetectorRepresenter:
 
-    def __init__(self, debug=False, thresh=0.3, box_thresh=0.7, max_candidates=100, dest='binary'):
+    def __init__(self, debug=False, thresh=0.3, box_thresh=0.7, max_candidates=100, dest='binary', cmd={}):
         self.debug = debug
         self.thresh = thresh
         self.box_thresh = box_thresh
         self.max_candidates = max_candidates
         self.dest = dest
-
+        
         self.min_size = 3
         self.scale_ratio = 0.4
+        if 'debug' in cmd:
+            self.debug = cmd['debug']
+        if 'thresh' in cmd:
+            self.thresh = cmd['thresh']
+        if 'box_thresh' in cmd:
+            self.box_thresh = cmd['box_thresh']
+        if 'dest' in cmd:
+            self.dest = cmd['dest']
 
     def represent(self, batch, _pred, is_output_polygon=False):
         '''
@@ -30,10 +38,7 @@ class SegDetectorRepresenter:
             thresh: [if exists] thresh hold prediction with shape (N, 1, H, W)
             thresh_binary: [if exists] binarized with threshhold, (N, 1, H, W)
         '''
-        if isinstance(batch, dict):
-            images = batch['image']
-        else:
-            images = batch
+        images = batch['image']
         if isinstance(_pred, dict):
             pred = _pred[self.dest]
         else:
@@ -41,13 +46,18 @@ class SegDetectorRepresenter:
         segmentation = self.binarize(pred)
         boxes_batch = []
         scores_batch = []
-        height, width = images.shape[2],  images.shape[3]
-        if is_output_polygon:
-            boxes, scores = self.polygons_from_bitmap(pred, segmentation, width, height)
-        else:
-            boxes, scores = self.boxes_from_bitmap(pred, segmentation, width, height)
-        boxes_batch.append(boxes)
-        scores_batch.append(scores)
+        for batch_index in range(images.size(0)):
+            height, width = batch['shape'][batch_index]
+            if is_output_polygon:
+                boxes, scores = self.polygons_from_bitmap(
+                    pred[batch_index],
+                    segmentation[batch_index], width, height)
+            else:
+                boxes, scores = self.boxes_from_bitmap(
+                    pred[batch_index],
+                    segmentation[batch_index], width, height)
+            boxes_batch.append(boxes)
+            scores_batch.append(scores)
         return boxes_batch, scores_batch
 
     def binarize(self, pred):
@@ -79,7 +89,7 @@ class SegDetectorRepresenter:
             # _, sside = self.get_mini_boxes(contour)
             # if sside < self.min_size:
             #     continue
-            score = self.box_score_fast(pred[0], points.reshape(-1, 2))
+            score = self.box_score_fast(pred, points.reshape(-1, 2))
             if self.box_thresh > score:
                 continue
 
@@ -115,12 +125,10 @@ class SegDetectorRepresenter:
         assert _bitmap.size(0) == 1
         bitmap = _bitmap.cpu().numpy()[0]  # The first channel
         pred = pred.cpu().detach().numpy()[0]
-        if len(bitmap.shape) == 2:
-            height, width = bitmap.shape[0], bitmap.shape[1]
-        elif len(bitmap.shape) == 3:
-            height, width = bitmap.shape[1], bitmap.shape[2]
-
-        contours, _ = cv2.findContours((bitmap * 255).astype(np.uint8)[0], cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        height, width = bitmap.shape
+        contours, _ = cv2.findContours(
+            (bitmap * 255).astype(np.uint8),
+            cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         num_contours = min(len(contours), self.max_candidates)
         boxes = np.zeros((num_contours, 4, 2), dtype=np.int16)
         scores = np.zeros((num_contours,), dtype=np.float32)
@@ -128,11 +136,10 @@ class SegDetectorRepresenter:
         for index in range(num_contours):
             contour = contours[index]
             points, sside = self.get_mini_boxes(contour)
-
             if sside < self.min_size:
                 continue
             points = np.array(points)
-            score = self.box_score_fast(pred[0], points.reshape(-1, 2))
+            score = self.box_score_fast(pred, points.reshape(-1, 2))
             if self.box_thresh > score:
                 continue
 

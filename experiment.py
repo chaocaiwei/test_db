@@ -23,7 +23,7 @@ def try_gpu(i=0):
 
 class Structure:
 
-    def __init__(self, model, representer=None, measurer=None, visualizer=None):
+    def __init__(self, model, representer=None, measurer=None, visualizer=None, cmd={}):
 
         arg = model['model_args']
         backbone = arg['backbone']
@@ -35,7 +35,7 @@ class Structure:
 
         if representer is not None:
             max_candidates = representer['max_candidates']
-            self.representer = SegDetectorRepresenter(max_candidates=max_candidates)
+            self.representer = SegDetectorRepresenter(max_candidates=max_candidates, cmd=cmd)
         if measurer is not None:
             self.measurer = QuadMeasurer()
         if visualizer is not None:
@@ -101,7 +101,7 @@ class Experiment:
         representer = structure['representer']
         measurer = structure['measurer']
         visualizer = structure['visualizer']
-        self.structure = Structure(model, representer, measurer, visualizer)
+        self.structure = Structure(model, representer, measurer, visualizer, cmd=cmd)
 
         train = args['train']
         epochs = train['epochs']
