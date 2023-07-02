@@ -15,6 +15,7 @@ class SENet(nn.Module):
             nn.Linear(channels // reduction, channels, bias=False),
             nn.Sigmoid()
         )
+        self.init_weights()
 
     def init_weights(self):
         for m in self.modules():
