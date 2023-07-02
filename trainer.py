@@ -137,27 +137,27 @@ class Trainer:
 
             self.logger.report_time('Logging')
 
-    def validate(self, validation_loaders, model, epoch, step):
+    def validate(self, loader, model, epoch, step):
         all_matircs = {}
         model.eval()
-        for name, loader in validation_loaders.items():
-            if self.experiment.validation.visualize:
-                metrics, vis_images = self.validate_step(
+        name = loader.dataset.dataset_name
+        if self.experiment.validation.visualize:
+            metrics, vis_images = self.validate_step(
                     loader, model, True)
-                self.logger.images(
+            self.logger.images(
                     os.path.join('vis', name), vis_images, step)
+        else:
+            metrics, vis_images = self.validate_step(loader, model, False)
+        for _key, metric in metrics.items():
+            key = name + '/' + _key
+            if key in all_matircs:
+                all_matircs[key].update(metric.val, metric.count)
             else:
-                metrics, vis_images = self.validate_step(loader, model, False)
-            for _key, metric in metrics.items():
-                key = name + '/' + _key
-                if key in all_matircs:
-                    all_matircs[key].update(metric.val, metric.count)
-                else:
-                    all_matircs[key] = metric
+                all_matircs[key] = metric
 
         for key, metric in all_matircs.items():
             self.logger.info('%s : %f (%d)' % (key, metric.avg, metric.count))
-        self.logger.metrics(epoch, self.steps, all_matircs)
+        self.logger.metrics(epoch, step, all_matircs)
         model.train()
         return all_matircs
 
