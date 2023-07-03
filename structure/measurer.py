@@ -23,7 +23,7 @@ class QuadMeasurer:
         results = []
         gt_polyons_batch = batch['polygons']
         ignore_tags_batch = batch['ignore_tags']
-        pred_polygons_batch = np.array(output[0])
+        pred_polygons_batch = np.array(output[0], dtype=object)
         pred_scores_batch = np.array(output[1])
         for polygons, pred_polygons, pred_scores, ignore_tags in\
                 zip(gt_polyons_batch, pred_polygons_batch, pred_scores_batch, ignore_tags_batch):

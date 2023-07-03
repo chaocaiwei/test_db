@@ -138,25 +138,21 @@ if __name__ == '__main__':
     org_img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     cv2.imshow('org image', org_img)
 
-    model_path_1 = '/Users/myself/Desktop/model/td500_adw_onecircle'
-    model_path_2 = '/Users/myself/Desktop/model/td500_sgd'
-    model_origin = '/Users/myself/Desktop/model/totaltext_sgd'
+    model_path_1 = '/Users/myself/Desktop/model/td500_7_2'
     model_1 = create_model(model_path_1)
-    model_2 = create_model(model_path_2)
-    model_origin = create_model(model_origin)
 
     data_dir = '/Users/myself/Desktop/datasets/MSRA-TD500/'
     processes = [{'class': 'AugmentDetectionData', 'augmenter_args': [['Resize', {'width': 736, 'height': 736}]],
-                  'only_resize': True, 'keep_ratio': True},
+                  'only_resize': True, 'keep_ratio': False},
                  {'class': 'MakeICDARData'}, {'class': 'MakeSegDetectionData'}, {'class': 'NormalizeImage'}]
     dataset = {'dataset_name': 'td500', 'data_dir': data_dir, 'processes':  processes}
-    loader = DataLoader(dataset, batch_size=1, num_workers=1, is_training=True, shuffle=False)
+    loader = DataLoader(dataset, batch_size=2, num_workers=2, is_training=True, shuffle=False)
     i = 0
     for batch in loader:
         if i < 5:
+            i += 1
             continue
-        i += 1
-        eval_model('td500_adw_onecircle', model_origin, batch, image_path, is_output_polygon=is_output_polygon,
+        eval_model('td500_adw_onecircle', model_1, batch, image_path, is_output_polygon=is_output_polygon,
                    box_thresh=box_thresh, thresh=thresh)
         break
 
