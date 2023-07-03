@@ -7,7 +7,7 @@ from experiment import Experiment
 
 
 class Trainer:
-    def __init__(self, experiment: Experiment):
+    def __init__(self, experiment: Experiment, validate=False):
         self.init_device()
 
         self.experiment = experiment
@@ -22,6 +22,14 @@ class Trainer:
         self.current_lr = 0
 
         self.total = 0
+
+        if validate:
+            self.validation = self.experiment.validation
+        else:
+            self.validation = None
+
+
+
 
     def init_device(self):
         if torch.cuda.is_available():
@@ -45,7 +53,7 @@ class Trainer:
         self.logger.args(self.args)
         model = self.init_model()
         train_data_loader = self.experiment.train.data_loader
-        if self.experiment.validation:
+        if self.validation:
             validation_loaders = self.experiment.validation.data_loaders
 
         self.steps = 0
@@ -71,9 +79,9 @@ class Trainer:
                 self.update_learning_rate(optimizer, epoch, self.steps)
                 self.logger.report_time("Data loading")
 
-                if self.experiment.validation and\
-                        self.steps % self.experiment.validation.interval == 0 and\
-                        self.steps > self.experiment.validation.exempt:
+                if self.validation and\
+                        self.steps % self.validation.interval == 0 and\
+                        self.steps > self.validation.exempt:
                     self.validate(validation_loaders, model, epoch, self.steps)
                 self.logger.report_time('Validating ')
                 if self.logger.verbose and torch.cuda.is_available():
@@ -94,7 +102,7 @@ class Trainer:
             epoch += 1
             if epoch > self.experiment.train.epochs:
                 self.model_saver.save_checkpoint(model, 'final')
-                if self.experiment.validation:
+                if self.validation:
                     self.validate(validation_loaders, model, epoch, self.steps)
                 self.logger.info('Training done')
                 break
@@ -141,7 +149,7 @@ class Trainer:
         all_matircs = {}
         model.eval()
         name = loader.dataset.dataset_name
-        if self.experiment.validation.visualize:
+        if self.validation.visualize:
             metrics, vis_images = self.validate_step(
                     loader, model, True)
             self.logger.images(

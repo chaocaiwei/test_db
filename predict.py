@@ -96,6 +96,7 @@ def eval_model(name, model, batch, filename, is_output_polygon=False, thresh=0.3
     img = batch['image']
     if len(img.shape) == 3:
         batch['image'] = img.reshape((1, *img.shape))
+        batch['shape'] = batch['shape'].reshape((1, *batch['shape'].shape))
 
     model.eval()
     with torch.no_grad():
@@ -128,7 +129,8 @@ def eval_model(name, model, batch, filename, is_output_polygon=False, thresh=0.3
 
 
 if __name__ == '__main__':
-    image_path = '/Users/myself/Desktop/datasets/MSRA-TD500/train/IMG_2011.JPG'
+
+    image_path = '/Users/myself/Desktop/datasets/total_text/Images/Train/img17.jpg'
     is_output_polygon = True
     thresh = 0.3
     box_thresh = 0.4
@@ -138,8 +140,10 @@ if __name__ == '__main__':
 
     model_path_1 = '/Users/myself/Desktop/model/td500_adw_onecircle'
     model_path_2 = '/Users/myself/Desktop/model/td500_sgd'
+    model_origin = '/Users/myself/Desktop/model/totaltext_sgd'
     model_1 = create_model(model_path_1)
     model_2 = create_model(model_path_2)
+    model_origin = create_model(model_origin)
 
     data_dir = '/Users/myself/Desktop/datasets/MSRA-TD500/'
     processes = [{'class': 'AugmentDetectionData', 'augmenter_args': [['Resize', {'width': 736, 'height': 736}]],
@@ -147,9 +151,14 @@ if __name__ == '__main__':
                  {'class': 'MakeICDARData'}, {'class': 'MakeSegDetectionData'}, {'class': 'NormalizeImage'}]
     dataset = {'dataset_name': 'td500', 'data_dir': data_dir, 'processes':  processes}
     loader = DataLoader(dataset, batch_size=1, num_workers=1, is_training=True, shuffle=False)
-    batch = loader.dataset[68]
-    eval_model('td500_adw_onecircle', model_1, batch, image_path, is_output_polygon=is_output_polygon,
+    i = 0
+    for batch in loader:
+        if i < 5:
+            continue
+        i += 1
+        eval_model('td500_adw_onecircle', model_origin, batch, image_path, is_output_polygon=is_output_polygon,
                    box_thresh=box_thresh, thresh=thresh)
+        break
 
 
 
