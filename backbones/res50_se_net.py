@@ -29,7 +29,7 @@ class SEResNet(ResNet):
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
                 BatchNorm2d(planes * block.expansion),
-                SENet(channels=planes * block.expansion * block.expansion, reduction=se_reduction)
+                SENet(channels=planes * block.expansion, reduction=se_reduction)
             )
 
         layers = []
