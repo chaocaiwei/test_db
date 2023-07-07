@@ -1,5 +1,5 @@
 import:
-    - 'experiments/base_totaltext.yaml'
+    - 'experiments/base_td500.yaml'
 package: []
 define:
   - name: 'Experiment'
@@ -8,7 +8,7 @@ define:
             class: SegDetectorModel
             model_args:
                 backbone: se_resnet50
-                decoder: SegDetectorAsff
+                decoder: SegDetector
                 decoder_args:
                     in_channels: [256, 512, 1024, 2048]
                     k: 50
@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/totaltext
+            dir_path: output/td500
             save_interval: 18000
             signal_path: save
         scheduler:

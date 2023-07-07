@@ -2,12 +2,9 @@ import os
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 import backbones.resnet
 import backbones.res50_se_net
-from backbones.res50_se_net import resnet50_se_net
-import decoders
 from decoders.seg_detector_asff import SegDetectorAsff
 from decoders.seg_detector import SegDetector
 
@@ -15,7 +12,7 @@ from decoders.seg_detector import SegDetector
 class BasicModel(nn.Module):
     def __init__(self, backbone, decoder, backbone_args, decoder_args):
         nn.Module.__init__(self)
-        if backbone == 'resnet50_se_net':
+        if 'se' in backbone:
             self.backbone = getattr(backbones.res50_se_net, backbone)()
         else:
             self.backbone = getattr(backbones.resnet, backbone)()

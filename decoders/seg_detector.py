@@ -1,20 +1,24 @@
-import torch
-from torch import nn
 from collections import OrderedDict
-from backbones.resnet import resnet18
 
+import torch
+import torch.nn as nn
+BatchNorm2d = nn.BatchNorm2d
 
 class SegDetector(nn.Module):
-
-    def __init__(self, backbones, pretrained=True, in_channels=[64, 128, 256, 512], inner_channels=256,
-                 k=10, bias=False, smooth=False, serial=False, istraining=True):
+    def __init__(self,
+                 in_channels=[64, 128, 256, 512],
+                 inner_channels=256, k=10,
+                 bias=False, adaptive=False, smooth=False, serial=False,
+                 *args, **kwargs):
+        '''
+        bias: Whether conv layers have bias or not.
+        adaptive: Whether to use adaptive threshold training or not.
+        smooth: If true, use bilinear instead of deconv.
+        serial: If true, thresh prediction will combine segmentation result as input.
+        '''
         super(SegDetector, self).__init__()
-
         self.k = k
         self.serial = serial
-        self.istraining = istraining
-
-        self.backbones = backbones
         self.up5 = nn.Upsample(scale_factor=2, mode='nearest')
         self.up4 = nn.Upsample(scale_factor=2, mode='nearest')
         self.up3 = nn.Upsample(scale_factor=2, mode='nearest')
@@ -25,67 +29,46 @@ class SegDetector(nn.Module):
         self.in2 = nn.Conv2d(in_channels[-4], inner_channels, 1, bias=bias)
 
         self.out5 = nn.Sequential(
-            nn.Conv2d(inner_channels, inner_channels // 4, kernel_size=3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=8, mode='nearest')
-        )
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=8, mode='nearest'))
         self.out4 = nn.Sequential(
-            nn.Conv2d(inner_channels,inner_channels // 4, kernel_size=3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=4, mode='nearest')
-        )
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=4, mode='nearest'))
         self.out3 = nn.Sequential(
-            nn.Conv2d(inner_channels, inner_channels // 4, kernel_size=3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=2, mode='nearest')
-        )
-        self.out2 = nn.Conv2d(inner_channels, inner_channels // 4, kernel_size=3, padding=1, bias=bias)
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            nn.Upsample(scale_factor=2, mode='nearest'))
+        self.out2 = nn.Conv2d(
+            inner_channels, inner_channels//4, 3, padding=1, bias=bias)
 
         self.prob = nn.Sequential(
-            nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
-            nn.BatchNorm2d(inner_channels // 4),
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(inner_channels // 4, inner_channels // 4, 2, 2),
-            nn.BatchNorm2d(inner_channels // 4),
+            nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
+            BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(inner_channels // 4, 1, 2, 2),
-            nn.Sigmoid()
-        )
+            nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
+            nn.Sigmoid())
         self.prob.apply(self.weights_init)
 
-        self.thresh = self._init_thresh(inner_channels, serial=serial, smooth=smooth, bias=bias)
-        self.thresh.apply(self.weights_init)
+        self.adaptive = adaptive
+        if adaptive:
+            self.thresh = self._init_thresh(
+                    inner_channels, serial=serial, smooth=smooth, bias=bias)
+            self.thresh.apply(self.weights_init)
 
-    # 像素不失2的倍数情况 up5 + in4 维度不统一
-    def forward(self, X):
-        c2, c3, c4, c5 = self.backbones(X)
-
-        in5 = self.in5(c5)
-        in4 = self.in4(c4)
-        in3 = self.in3(c3)
-        in2 = self.in2(c2)
-
-        p5 = self.out5(in5)
-        up5 = self.up5(in5)
-        p4 = self.out4(up5 + in4)
-        p3 = self.out3(self.up4(in4) + in3)
-        p2 = self.out2(self.up5(in3) + in2)
-
-        fuse = torch.cat((p5, p4, p3, p2), 1)
-
-        prob = self.prob(fuse)
-        if self.istraining:
-            if self.serial:
-                fuse = torch.cat(
-                        (fuse,
-                         nn.functional.interpolate(prob, fuse.shape[2:])), 1)
-            thresh = self.thresh(fuse)
-            binary = self.step_function(prob, thresh)
-            result = OrderedDict(prob=prob)
-            result.update(thresh=thresh, binary=binary)
-            return result
-        else:
-            return prob
-
-        # prob---binary    thresh---thresh   thresh_binary---thresh_binary
-
+        self.in5.apply(self.weights_init)
+        self.in4.apply(self.weights_init)
+        self.in3.apply(self.weights_init)
+        self.in2.apply(self.weights_init)
+        self.out5.apply(self.weights_init)
+        self.out4.apply(self.weights_init)
+        self.out3.apply(self.weights_init)
+        self.out2.apply(self.weights_init)
 
     def weights_init(self, m):
         classname = m.__class__.__name__
@@ -101,11 +84,12 @@ class SegDetector(nn.Module):
         if serial:
             in_channels += 1
         self.thresh = nn.Sequential(
-            nn.Conv2d(in_channels, inner_channels // 4, 3, padding=1, bias=bias),
-            nn.BatchNorm2d(inner_channels//4),
+            nn.Conv2d(in_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
             self._init_upsample(inner_channels // 4, inner_channels//4, smooth=smooth, bias=bias),
-            nn.BatchNorm2d(inner_channels//4),
+            BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
             self._init_upsample(inner_channels // 4, 1, smooth=smooth, bias=bias),
             nn.Sigmoid())
@@ -129,6 +113,39 @@ class SegDetector(nn.Module):
             return nn.Sequential(module_list)
         else:
             return nn.ConvTranspose2d(in_channels, out_channels, 2, 2)
+
+    def forward(self, features, gt=None, masks=None, training=False):
+        c2, c3, c4, c5 = features
+        in5 = self.in5(c5)
+        in4 = self.in4(c4)
+        in3 = self.in3(c3)
+        in2 = self.in2(c2)
+
+        out4 = self.up5(in5) + in4  # 1/16
+        out3 = self.up4(out4) + in3  # 1/8
+        out2 = self.up3(out3) + in2  # 1/4
+
+        p5 = self.out5(in5)
+        p4 = self.out4(out4)
+        p3 = self.out3(out3)
+        p2 = self.out2(out2)
+
+        fuse = torch.cat((p5, p4, p3, p2), 1)
+
+        prob = self.prob(fuse)
+        if self.training:
+            result = OrderedDict(prob=prob)
+        else:
+            return prob
+        if self.adaptive and self.training:
+            if self.serial:
+                fuse = torch.cat(
+                        (fuse, nn.functional.interpolate(
+                            prob, fuse.shape[2:])), 1)
+            thresh = self.thresh(fuse)
+            binary = self.step_function(prob, thresh)
+            result.update(thresh=thresh, binary=binary)
+        return result
 
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
