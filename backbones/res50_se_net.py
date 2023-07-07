@@ -6,10 +6,13 @@ import torch.utils.model_zoo as model_zoo
 from backbones.resnet import ResNet
 from torch.nn import BatchNorm2d
 from backbones.resnet import Bottleneck
-__all__ = ['ResNet', 'resnet50_se_net']
+import math
+from backbones.resnet import BasicBlock
+
+
+__all__ = ['ResNet', 'se_resnet50', 'deformable_se_resnet50']
 
 se_reduction = 16
-
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -20,7 +23,48 @@ model_urls = {
 }
 
 
-class SEResNet(ResNet):
+def constant_init(module, constant, bias=0):
+    nn.init.constant_(module.weight, constant)
+    if hasattr(module, 'bias'):
+        nn.init.constant_(module.bias, bias)
+
+
+class SEResNet(nn.Module):
+    def __init__(self, block, layers, num_classes=1000,
+                 dcn=None, stage_with_dcn=(False, False, False, False)):
+        self.dcn = dcn
+        self.stage_with_dcn = stage_with_dcn
+        self.inplanes = 64
+        super(SEResNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.bn1 = BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(
+            block, 128, layers[1], stride=2, dcn=dcn)
+        self.layer3 = self._make_layer(
+            block, 256, layers[2], stride=2, dcn=dcn)
+        self.layer4 = self._make_layer(
+            block, 512, layers[3], stride=2, dcn=dcn)
+        self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+        self.smooth = nn.Conv2d(2048, 256, kernel_size=1, stride=1, padding=1)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+        if self.dcn is not None:
+            for m in self.modules():
+                if isinstance(m, Bottleneck) or isinstance(m, BasicBlock):
+                    if hasattr(m, 'conv2_offset'):
+                        constant_init(m.conv2_offset, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1, dcn=None):
         downsample = None
@@ -40,6 +84,7 @@ class SEResNet(ResNet):
             layers.append(block(self.inplanes, planes, dcn=dcn))
 
         return nn.Sequential(*layers)
+
 
 def se_resnet50(pretrained=True, **kwargs):
     """Constructs a ResNet-50 model.
