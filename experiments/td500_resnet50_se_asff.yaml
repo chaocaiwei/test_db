@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/td500
+            dir_path: output/se_asff/td500
             save_interval: 18000
             signal_path: save
         scheduler:
