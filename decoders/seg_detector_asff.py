@@ -73,7 +73,7 @@ class SegDetectorAsff(SegDetector):
         asff2 = self.asff2(p5, p4, p3, p2)
         asff3 = self.asff3(p5, p4, p3, p2)
 
-        out0 = self.out(asff0)
+        out0 = self.out5(asff0)
         out1 = self.out4(asff1)
         out2 = self.out3(asff2)
         out3 = asff3
