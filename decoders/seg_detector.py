@@ -137,7 +137,7 @@ class SegDetector(nn.Module):
             result = OrderedDict(prob=prob)
         else:
             return prob
-        if self.adaptive and self.training:
+        if self.training:
             if self.serial:
                 fuse = torch.cat(
                         (fuse, nn.functional.interpolate(
