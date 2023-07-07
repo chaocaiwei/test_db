@@ -56,10 +56,9 @@ class SegDetector(nn.Module):
         self.prob.apply(self.weights_init)
 
         self.adaptive = adaptive
-        if adaptive:
-            self.thresh = self._init_thresh(
+        self.thresh = self._init_thresh(
                     inner_channels, serial=serial, smooth=smooth, bias=bias)
-            self.thresh.apply(self.weights_init)
+        self.thresh.apply(self.weights_init)
 
         self.in5.apply(self.weights_init)
         self.in4.apply(self.weights_init)

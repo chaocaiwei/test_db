@@ -3,7 +3,7 @@ from torch import nn
 from collections import OrderedDict
 from backbones.asff import ASFFNetwork
 from .seg_detector import SegDetector
-
+from torch.nn import BatchNorm2d
 
 class SegDetectorAsff(SegDetector):
 
@@ -48,6 +48,23 @@ class SegDetectorAsff(SegDetector):
         self.conv4.apply(self.weights_init)
         self.conv3.apply(self.weights_init)
         self.conv2.apply(self.weights_init)
+
+        self.prob = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels //
+                      4, 3, padding=1, bias=bias),
+            BatchNorm2d(inner_channels//4),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
+            BatchNorm2d(inner_channels//4),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
+            nn.Sigmoid())
+        self.prob.apply(self.weights_init)
+
+        self.adaptive = adaptive
+        self.thresh = self._init_thresh(
+                    inner_channels, serial=serial, smooth=smooth, bias=bias)
+        self.thresh.apply(self.weights_init)
 
 
 
