@@ -84,7 +84,19 @@ class SEResNet(nn.Module):
             layers.append(block(self.inplanes, planes, dcn=dcn))
 
         return nn.Sequential(*layers)
+    
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
 
+        x2 = self.layer1(x)
+        x3 = self.layer2(x2)
+        x4 = self.layer3(x3)
+        x5 = self.layer4(x4)
+
+        return x2, x3, x4, x5
 
 def se_resnet50(pretrained=True, **kwargs):
     """Constructs a ResNet-50 model.
