@@ -72,22 +72,25 @@ class PiecewiseConstantLearningRate(Configurable):
 
 
 class DecayLearningRate(Configurable):
+    lr = State(default=0.007)
+    epochs = State(default=1200)
+    factor = State(default=0.9)
 
-    def __init__(self, lr=0.007, epochs=1200, factor=0.9):
-        self.lr = lr
-        self.epochs = epochs
-        self.factor = factor
+    def __init__(self, **kwargs):
+        self.load_all(**kwargs)
+        print(self)
 
     def get_learning_rate(self, epoch, step=None):
         rate = np.power(1.0 - epoch / float(self.epochs + 1), self.factor)
         return rate * self.lr
 
 
-class BuiltinLearningRate:
+class BuiltinLearningRate(Configurable):
+    lr = State(default=0.001)
+    klass = State(default='StepLR')
 
-    def __init__(self, klass='StepLR', lr=0.001, **kwargs):
-        self.klass = klass
-        self.lr = lr
+    def __init__(self, **kwargs):
+        self.load_all(**kwargs)
         self.scheduler = None
         self.kwargs = kwargs
 
