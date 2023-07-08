@@ -26,7 +26,7 @@ def mov_fild(base, training):
             shutil.move(cur_path, i_path)
         elif ext == 'gt':
             m_path = gt_path + file
-            rename_path = gt_path + fid + '.txt'
+            rename_path = gt_path + file + '.txt'
             shutil.move(cur_path, gt_path)
             os.rename(m_path, rename_path)
 
@@ -42,6 +42,16 @@ def create_list_path(base, training):
             fd.write(file + '\n')
 
 
+def rename(dir, is_training):
+    path = dir + 'train_gts/' if is_training else dir + 'test_gts/'
+    files = os.listdir(path)
+    for file in files:
+        fid = file.split('.')[0]
+        cur_path = os.path.join(path, file)
+        rename_path = path + fid + '.JPG.txt'
+        os.rename(cur_path, rename_path)
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Text Recognition Training')
@@ -51,10 +61,12 @@ if __name__ == '__main__':
     args = {k: v for k, v in args.items() if v is not None}
     base = args['base']
 
-    mov_fild(base, True)
-    mov_fild(base, False)
-    create_list_path(base, True)
-    create_list_path(base, False)
+    #mov_fild(base, True)
+    #mov_fild(base, False)
+    #create_list_path(base, True)
+    #create_list_path(base, False)
+    rename(base, True)
+    rename(base, False)
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
