@@ -1,5 +1,5 @@
 import:
-    - 'experiments/base_td500.yaml'
+    - 'experiments/base_totaltext.yaml'
 package: []
 define:
   - name: 'Experiment'
@@ -7,7 +7,7 @@ define:
         model:
             class: SegDetectorModel
             model_args:
-                backbone: se_resnet50
+                backbone: deformable_se_resnet50
                 decoder: SegDetectorAsff
                 decoder_args:
                     in_channels: [256, 512, 1024, 2048]
@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/se_asff/td500
+            dir_path: output/se_asff/totaltext_deform
             save_interval: 18000
             signal_path: save
         scheduler:
