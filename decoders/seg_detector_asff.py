@@ -2,17 +2,17 @@ import torch
 from torch import nn
 from collections import OrderedDict
 from backbones.asff import ASFFNetwork
-from .seg_detector import SegDetector
 from torch.nn import BatchNorm2d
 
-class SegDetectorAsff(SegDetector):
+
+class SegDetectorAsff(nn.Module):
 
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
                  inner_channels=256, k=10,
                  bias=False, adaptive=False, smooth=False, serial=False,
                  *args, **kwargs):
-        super(SegDetector, self).__init__()
+        super(SegDetectorAsff, self).__init__()
         self.k = k
         self.serial = serial
         self.up5 = nn.Upsample(scale_factor=2, mode='nearest')
@@ -66,9 +66,6 @@ class SegDetectorAsff(SegDetector):
                     inner_channels, serial=serial, smooth=smooth, bias=bias)
         self.thresh.apply(self.weights_init)
 
-
-
-    # 像素不失2的倍数情况 up5 + in4 维度不统一
     def forward(self, X):
         c2, c3, c4, c5 = X
         in5 = self.in5(c5)
@@ -110,7 +107,6 @@ class SegDetectorAsff(SegDetector):
             binary = self.step_function(prob, thresh)
             result.update(thresh=thresh, binary=binary)
         return result
-
 
     def weights_init(self, m):
         classname = m.__class__.__name__

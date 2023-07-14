@@ -56,11 +56,7 @@ class DataLoader(torch.utils.data.DataLoader):
             data_dir = datasets['data_dir']
             if 'data_dir' in cmd:
                 data_dir = cmd['data_dir']
-            if 'gt_dir' in cmd:
-                gt_dir = cmd['gt_dir']
-            else:
-                gt_dir = None
-            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, gt_dir=gt_dir)
+            datasets = ImageDataset(processes=processed, is_training=self.is_training, dataset_name=dataset_name, data_dir=data_dir, cmd=cmd)
         return datasets
 
     def load_processes(self, processes):

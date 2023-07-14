@@ -17,20 +17,18 @@ class ImageDataset(data.Dataset):
             typically inherrited the `DataProcess`(data/processes/data_process.py) class.
     '''
 
-    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, gt_dir=None, processes=[]):
+    def __init__(self, dataset_name, is_training=True, debug=False, data_dir=None, processes=[], cmd={}):
         self.dataset_name = dataset_name
         self.data_dir = data_dir
         self.processes = processes
         self.is_training = is_training
         self.debug = debug
-        self.gt_dir = gt_dir
 
-        if self.gt_dir is not None:
-            if self.is_training:
-                self.data_list = self.gt_dir + 'train_list.txt'
-            else:
-                self.data_list = self.gt_dir + 'test_list.txt'
-
+        if 'data_dir' in cmd:
+            data_dir = cmd['data_dir']
+            data_list = data_dir + '/train_list.txt' if self.is_training else data_dir + '/test_list.txt'
+            self.data_dir = [data_dir]
+            self.data_list = [data_list]
 
         self.image_paths = []
         self.gt_paths = []
@@ -40,43 +38,23 @@ class ImageDataset(data.Dataset):
         self.get_all_samples()
 
     def get_all_samples(self):
-        if 'TD500' in self.data_dir:
-            if self.is_training:
-                self.data_dir = self.data_dir + 'train/'
-            else:
-                self.data_dir = self.data_dir + 'test/'
-            path = self.data_dir
-            files = os.listdir(path)
-            for file in files:
-                fid, ext = file.split('.')
-                if ext == 'JPG':
-                    img_path = os.path.join(path, file)
-                    gt_path = os.path.join(path, fid + '.gt')
-                    self.image_paths.append(img_path)
-                    self.gt_paths.append(gt_path)
-                    self.fids.append(fid)
-            self.targets = []
-            for path in self.gt_paths:
-                polys = self.get_msra_ann(path)
-                self.targets.append(polys)
-        else:
-            with open(self.data_list, 'r') as fid:
+        for i in range(len(self.data_dir)):
+            with open(self.data_list[i], 'r') as fid:
                 image_list = fid.readlines()
             if self.is_training:
-                image_path = [self.data_dir + 'Images/Train/' + timg.strip() for timg in image_list]
-                gt_path = [self.gt_dir + 'train_gts/' + timg.strip() + '.txt' for timg in image_list]
+                image_path=[self.data_dir[i]+'/train_images/'+timg.strip() for timg in image_list]
+                gt_path=[self.data_dir[i]+'/train_gts/'+timg.strip()+'.txt' for timg in image_list]
             else:
-                image_path = [self.data_dir + 'Images/Test/' + timg.strip() for timg in image_list]
-                print(self.data_dir)
-                if 'TD500' in self.data_list or 'total_text' in self.data_list:
-                    gt_path = [self.gt_dir + 'test_gts/' + timg.strip() + '.txt' for timg in image_list]
+                image_path=[self.data_dir[i]+'/test_images/'+timg.strip() for timg in image_list]
+                print(self.data_dir[i])
+                if 'TD500' in self.data_list[i] or 'total_text' in self.data_list[i]:
+                    gt_path=[self.data_dir[i]+'/test_gts/'+timg.strip()+'.txt' for timg in image_list]
                 else:
-                    gt_path = [self.gt_dir + 'test_gts/' + timg.strip().split('.')[0] + '.txt' for
-                               timg in image_list]
+                    gt_path=[self.data_dir[i]+'/test_gts/'+'gt_'+timg.strip().split('.')[0]+'.txt' for timg in image_list]
             self.image_paths += image_path
             self.gt_paths += gt_path
-            self.targets = self.load_ann()
         self.num_samples = len(self.image_paths)
+        self.targets = self.load_ann()
         if self.is_training:
             assert len(self.image_paths) == len(self.targets)
 
@@ -102,27 +80,6 @@ class ImageDataset(data.Dataset):
                 lines.append(item)
             res.append(lines)
         return res
-
-
-    def get_msra_ann(self, gt_path):
-        bboxes = []
-        reader = open(gt_path, 'r').readlines()
-        for line in reader:
-            line = line.encode('utf-8').decode('utf-8-sig')
-            line = line.replace('\xef\xbb\xbf', '')
-            line = line.replace('\n', '')
-            gt = line.split(' ')
-
-            w_ = np.float(gt[4])
-            h_ = np.float(gt[5])
-            x1 = np.float(gt[2]) + w_ / 2.0
-            y1 = np.float(gt[3]) + h_ / 2.0
-            theta = np.float(gt[6]) / math.pi * 180
-
-            bbox = cv2.boxPoints(((x1, y1), (w_, h_), theta))
-            bboxes.append({'poly': bbox, 'text': '#', 'ignore': False})
-
-        return np.array(bboxes)
 
     def __getitem__(self, index, retry=0):
         if index >= self.num_samples:

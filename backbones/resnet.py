@@ -37,36 +37,15 @@ class BasicBlock(nn.Module):
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.with_modulated_dcn = False
-        if self.with_dcn:
-            fallback_on_stride = dcn.get('fallback_on_stride', False)
-            self.with_modulated_dcn = dcn.get('modulated', False)
-        # self.conv2 = conv3x3(planes, planes)
-        if not self.with_dcn or fallback_on_stride:
+        if not self.with_dcn:
             self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
                                    padding=1, bias=False)
         else:
+            from torchvision.ops import DeformConv2d
             deformable_groups = dcn.get('deformable_groups', 1)
-            if not self.with_modulated_dcn:
-                from assets.ops.dcn import DeformConv
-                conv_op = DeformConv
-                offset_channels = 18
-            else:
-                from assets.ops.dcn import ModulatedDeformConv
-                conv_op = ModulatedDeformConv
-                offset_channels = 27
-            self.conv2_offset = nn.Conv2d(
-                planes,
-                deformable_groups * offset_channels,
-                kernel_size=3,
-                padding=1)
-            self.conv2 = conv_op(
-                planes,
-                planes,
-                kernel_size=3,
-                padding=1,
-                deformable_groups=deformable_groups,
-                bias=False)
+            offset_channels = 18
+            self.conv2_offset = nn.Conv2d(planes, deformable_groups * offset_channels, kernel_size=3, padding=1)
+            self.conv2 = DeformConv2d(planes, planes, kernel_size=3, padding=1, bias=False)
         self.bn2 = BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
@@ -81,11 +60,6 @@ class BasicBlock(nn.Module):
         # out = self.conv2(out)
         if not self.with_dcn:
             out = self.conv2(out)
-        elif self.with_modulated_dcn:
-            offset_mask = self.conv2_offset(out)
-            offset = offset_mask[:, :18, :, :]
-            mask = offset_mask[:, -9:, :, :].sigmoid()
-            out = self.conv2(out, offset, mask)
         else:
             offset = self.conv2_offset(out)
             out = self.conv2(out, offset)
@@ -108,31 +82,15 @@ class Bottleneck(nn.Module):
         self.with_dcn = dcn is not None
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = BatchNorm2d(planes)
-        fallback_on_stride = False
-        self.with_modulated_dcn = False
-        if self.with_dcn:
-            fallback_on_stride = dcn.get('fallback_on_stride', False)
-            self.with_modulated_dcn = dcn.get('modulated', False)
-        if not self.with_dcn or fallback_on_stride:
+        if not self.with_dcn:
             self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
                                    stride=stride, padding=1, bias=False)
         else:
+            from torchvision.ops import DeformConv2d
             deformable_groups = dcn.get('deformable_groups', 1)
-            if not self.with_modulated_dcn:
-                from assets.ops.dcn import DeformConv
-                conv_op = DeformConv
-                offset_channels = 18
-            else:
-                from assets.ops.dcn import ModulatedDeformConv
-                conv_op = ModulatedDeformConv
-                offset_channels = 27
-            self.conv2_offset = nn.Conv2d(
-                planes, deformable_groups * offset_channels,
-                kernel_size=3,
-                padding=1)
-            self.conv2 = conv_op(
-                planes, planes, kernel_size=3, padding=1, stride=stride,
-                deformable_groups=deformable_groups, bias=False)
+            offset_channels = 18
+            self.conv2_offset = nn.Conv2d(planes, deformable_groups * offset_channels, kernel_size=3, padding=1)
+            self.conv2 = DeformConv2d(planes, planes, kernel_size=3, padding=1, bias=False)
         self.bn2 = BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = BatchNorm2d(planes * 4)
@@ -152,11 +110,6 @@ class Bottleneck(nn.Module):
         # out = self.conv2(out)
         if not self.with_dcn:
             out = self.conv2(out)
-        elif self.with_modulated_dcn:
-            offset_mask = self.conv2_offset(out)
-            offset = offset_mask[:, :18, :, :]
-            mask = offset_mask[:, -9:, :, :].sigmoid()
-            out = self.conv2(out, offset, mask)
         else:
             offset = self.conv2_offset(out)
             out = self.conv2(out, offset)
