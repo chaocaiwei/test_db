@@ -5,6 +5,8 @@ from backbones.resnet import ResNet
 from torch.nn import BatchNorm2d
 from backbones.resnet import Bottleneck
 from backbones.resnet import model_urls
+from backbones.resnet import BasicBlock
+import math
 
 __all__ = ['SEResNet', 'se_resnet50', 'deformable_se_resnet50']
 
@@ -15,8 +17,44 @@ def constant_init(module, constant, bias=0):
         nn.init.constant_(module.bias, bias)
 
 
-class SEResNet(ResNet):
+class SEResNet(nn.Module):
     se_reduction = 16
+
+    def __init__(self, block, layers, num_classes=1000,
+                 dcn=None, stage_with_dcn=(False, False, False, False)):
+        self.dcn = dcn
+        self.stage_with_dcn = stage_with_dcn
+        self.inplanes = 64
+        super(SEResNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.bn1 = BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(
+            block, 128, layers[1], stride=2, dcn=dcn)
+        self.layer3 = self._make_layer(
+            block, 256, layers[2], stride=2, dcn=dcn)
+        self.layer4 = self._make_layer(
+            block, 512, layers[3], stride=2, dcn=dcn)
+        self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+        self.smooth = nn.Conv2d(2048, 256, kernel_size=1, stride=1, padding=1)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+        if self.dcn is not None:
+            for m in self.modules():
+                if isinstance(m, Bottleneck) or isinstance(m, BasicBlock):
+                    if hasattr(m, 'conv2_offset'):
+                        constant_init(m.conv2_offset, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1, dcn=None):
         downsample = None
@@ -36,6 +74,18 @@ class SEResNet(ResNet):
 
         return nn.Sequential(*layers)
 
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x2 = self.layer1(x)
+        x3 = self.layer2(x2)
+        x4 = self.layer3(x3)
+        x5 = self.layer4(x4)
+
+        return x2, x3, x4, x5
 
 def se_resnet50(pretrained=True, **kwargs):
     """Constructs a ResNet-50 model.

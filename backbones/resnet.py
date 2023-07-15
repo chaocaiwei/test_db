@@ -4,9 +4,6 @@ import torch.utils.model_zoo as model_zoo
 
 BatchNorm2d = nn.BatchNorm2d
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152']
-
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
@@ -15,6 +12,8 @@ model_urls = {
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
 
+__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
+           'resnet152', 'model_urls', 'Bottleneck', 'BasicBlock']
 
 def constant_init(module, constant, bias=0):
     nn.init.constant_(module.weight, constant)
