@@ -33,20 +33,20 @@ class DataLoader(torch.utils.data.DataLoader):
         if 'num_workers' in cmd:
             self.num_workers = cmd['num_workers']
 
-
         if self.collect_fn is None:
             self.collect_fn = torch.utils.data.dataloader.default_collate
         if self.shuffle is None:
             self.shuffle = self.is_training
 
         self.dataset = self.load_datasets(dataset, cmd)
-
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         torch.utils.data.DataLoader.__init__(
                 self, self.dataset,
                 batch_size=self.batch_size, num_workers=self.num_workers,
                 drop_last=self.drop_last, shuffle=self.shuffle,
                 pin_memory=True, collate_fn=self.collect_fn,
-                worker_init_fn=default_worker_init_fn)
+                worker_init_fn=default_worker_init_fn,
+                generator=torch.Generator(device=device))
         self.collect_fn = str(self.collect_fn)
 
     def load_datasets(self, datasets, cmd):
