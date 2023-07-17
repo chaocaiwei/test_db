@@ -45,6 +45,7 @@ define:
             optimizer_args:
                 lr: 0.007
                 momentum: 0.9
+                weight_decay: 0.001
             learning_rate:
                 class: DecayLearningRate
                 epochs: 1200
