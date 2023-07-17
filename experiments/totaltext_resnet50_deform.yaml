@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/se_asff/totaltext_deform
+            dir_path: output/org/totaltext_deform
             save_interval: 18000
             signal_path: save
         scheduler:

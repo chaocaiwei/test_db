@@ -172,8 +172,8 @@ class Eval:
                 raw_metric = self.structure.measurer.validate_measure(batch, output,
                                                                       is_output_polygon=self.args['polygon'],
                                                                       box_thresh=self.args['box_thresh'])
+                print(raw_metric)
                 raw_metrics.append(raw_metric)
-
                 if visualize and self.structure.visualizer:
                     vis_image = self.structure.visualizer.visualize(batch, output, pred)
                     self.logger.save_image_dict(vis_image)
