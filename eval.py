@@ -125,12 +125,15 @@ class Eval:
         return time_cost
 
     def format_output(self, batch, output):
+        out_path = os.path.join(self.args['result_dir'], '/format_out/')
+        if not os.path.isdir(out_path):
+            os.mkdir(out_path)
         batch_boxes, batch_scores = output
         for index in range(batch['image'].size(0)):
             original_shape = batch['shape'][index]
             filename = batch['filename'][index]
             result_file_name = 'res_' + filename.split('/')[-1].split('.')[0] + '.txt'
-            result_file_path = os.path.join(self.args['result_dir'], result_file_name)
+            result_file_path = os.path.join(out_path, result_file_name)
             boxes = batch_boxes[index]
             scores = batch_scores[index]
             if self.args['polygon']:
