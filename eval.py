@@ -125,7 +125,7 @@ class Eval:
         return time_cost
 
     def format_output(self, batch, output):
-        out_path = os.path.join(self.args['result_dir'], '/format_out/')
+        out_path = self.args['result_dir'] + '/format_out/'
         if not os.path.isdir(out_path):
             os.mkdir(out_path)
         batch_boxes, batch_scores = output
