@@ -1,5 +1,6 @@
 from bisect import bisect_right
 import numpy as np
+import torch.optim.lr_scheduler
 import torch.optim.lr_scheduler as lr_scheduler
 
 from config import Configurable, State
@@ -91,9 +92,12 @@ class BuiltinLearningRate(Configurable):
     def __init__(self, **kwargs):
         self.load_all(**kwargs)
         self.scheduler = None
+        kwargs.pop('klass')
         self.kwargs = kwargs
 
     def prepare(self, optimizer):
+        if self.klass == 'OneCycleLR':
+            self.kwargs.pop('lr')
         self.scheduler = getattr(lr_scheduler, self.klass)(
             optimizer, **self.kwargs)
 

@@ -36,16 +36,16 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/se_asff/td500_deform/weight_dec_001
+            dir_path: output/se_asff/td500_deform/lr_0007
             save_interval: 18000
             signal_path: save
         scheduler:
             class: OptimizerScheduler
             optimizer: "SGD"
             optimizer_args:
-                lr: 0.007
+                lr: 0.0007
                 momentum: 0.9
-                weight_decay: 0.001
+                weight_decay: 0.0001
             learning_rate:
                 class: DecayLearningRate
                 epochs: 1200

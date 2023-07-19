@@ -8,7 +8,7 @@ define:
             class: SegDetectorModel
             model_args:
                 backbone: deformable_se_resnet50
-                decoder: SegDetectorAsff
+                decoder: SegDetector
                 decoder_args:
                     in_channels: [256, 512, 1024, 2048]
                     k: 50
@@ -36,7 +36,7 @@ define:
             resume: null
         model_saver:
             class: ModelSaver
-            dir_path: output/se_asff/td500_deform/weight_dec_001
+            dir_path: output/se/td500_deform/
             save_interval: 18000
             signal_path: save
         scheduler:
@@ -45,7 +45,7 @@ define:
             optimizer_args:
                 lr: 0.007
                 momentum: 0.9
-                weight_decay: 0.001
+                weight_decay: 0.0001
             learning_rate:
                 class: DecayLearningRate
                 epochs: 1200
