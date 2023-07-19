@@ -165,7 +165,7 @@ class SegDetectorRepresenter:
         distance = poly.area * unclip_ratio / poly.length
         offset = pyclipper.PyclipperOffset()
         offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-        expanded = np.array(offset.Execute(distance))
+        expanded = np.array(offset.Execute(distance), dtype=object)
         return expanded
 
     def get_mini_boxes(self, contour):
