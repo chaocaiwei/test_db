@@ -6,18 +6,20 @@ import training.learning_rate
 class OptimizerScheduler(Configurable):
 
     def __init__(self, optimizer, learning_rate, optimizer_args, cmd={}):
-        self.optimizer = optimizer
-        self.learning_rate = learning_rate
-        self.optimizer_args = optimizer_args
 
         r_cl = learning_rate['class'].split('.')[-1]
-        epochs = learning_rate['epochs']
         learning_rate.pop('class')
         learning_rate['lr'] = optimizer_args['lr']
-        self.learning_rate = getattr(training.learning_rate, r_cl)(**learning_rate)
 
         if 'lr' in cmd:
-            self.optimizer_args['lr'] = cmd['lr']
+            optimizer_args['lr'] = cmd['lr']
+            learning_rate['lr'] = cmd['lr']
+
+        self.optimizer = optimizer
+        self.optimizer_args = optimizer_args
+        self.learning_rate = getattr(training.learning_rate, r_cl)(**learning_rate)
+
+
 
     def create_optimizer(self, parameters):
         optimizer = getattr(torch.optim, self.optimizer)(

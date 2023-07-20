@@ -72,6 +72,7 @@ class Train:
         optimizer = scheduler['optimizer']
         optimizer_args = scheduler['optimizer_args']
         learning_rate = scheduler['learning_rate']
+        learning_rate['epochs'] = epochs
         self.scheduler = OptimizerScheduler(optimizer, learning_rate, optimizer_args, cmd=cmd)
 
 

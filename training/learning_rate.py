@@ -97,6 +97,7 @@ class BuiltinLearningRate(Configurable):
 
     def prepare(self, optimizer):
         if self.klass == 'OneCycleLR':
+            self.kwargs['max_lr'] = self.kwargs['lr']
             self.kwargs.pop('lr')
         self.scheduler = getattr(lr_scheduler, self.klass)(
             optimizer, **self.kwargs)
