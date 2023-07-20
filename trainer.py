@@ -76,7 +76,7 @@ class Trainer:
             self.total = len(train_data_loader)
 
             for batch in train_data_loader:
-                self.update_learning_rate(optimizer, epoch, self.steps)
+
                 self.logger.report_time("Data loading")
 
                 if self.validation and\
@@ -89,6 +89,8 @@ class Trainer:
 
                 self.train_step(model, optimizer, batch,
                                 epoch=epoch, step=self.steps)
+                self.update_learning_rate(optimizer, epoch, self.steps)
+
                 if self.logger.verbose and torch.cuda.is_available():
                     torch.cuda.synchronize()
                 self.logger.report_time('Forwarding ')

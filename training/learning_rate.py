@@ -104,7 +104,7 @@ class BuiltinLearningRate(Configurable):
     def get_learning_rate(self, epoch, step=None):
         if self.scheduler is None:
             raise 'learning rate not ready(prepared with optimizer) '
-        self.scheduler.last_epoch = epoch
+        self.scheduler.step()
         # return value of gt_lr is a list,
         # where each element is the corresponding learning rate for a
         # paramater group.

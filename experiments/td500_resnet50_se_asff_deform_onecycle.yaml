@@ -51,7 +51,7 @@ define:
                 epochs: 1200
                 klass: OneCycleLR
                 max_lr: 0.007
-                steps_per_epoch: 19
+                steps_per_epoch: 18
     validation: &validate
         data_loader:
             class: DataLoader
