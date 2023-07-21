@@ -62,8 +62,11 @@ def main():
     experiment = Experiment(experiment_args)
 
     if not args['print_config_only']:
+        validate = False
+        if 'validate' in args:
+            validate = args['validate']
         torch.backends.cudnn.benchmark = args['benchmark']
-        trainer = Trainer(experiment)
+        trainer = Trainer(experiment, validate=validate)
         trainer.train()
 
 
