@@ -1,0 +1,68 @@
+import:
+    - 'experiments/base_td500.yaml'
+package: []
+define:
+  - name: 'Experiment'
+    structure:
+        model:
+            class: SegDetectorModel
+            model_args:
+                backbone: resnet50
+                decoder: SegDetectorAsff
+                decoder_args:
+                    in_channels: [256, 512, 1024, 2048]
+                    k: 50
+                loss:
+                    class: L1BalanceCELoss
+        representer:
+            class: SegDetectorRepresenter
+            max_candidates: 1000
+        measurer:
+            class: QuadMeasurer
+        visualizer:
+            class: SegDetectorVisualizer
+            eager_show: false
+    train:
+        epochs: 1200
+        data_loader:
+            class: DataLoader
+            dataset: ^train_data
+            batch_size: 16
+            num_workers: 8
+        checkpoint:
+            class: Checkpoint
+            start_epoch: 0
+            start_iter: 0
+            resume: null
+        model_saver:
+            class: ModelSaver
+            dir_path: output/org/td500
+            save_interval: 18000
+            signal_path: save
+        scheduler:
+            class: OptimizerScheduler
+            optimizer: "SGD"
+            optimizer_args:
+                lr: 0.007
+                momentum: 0.9
+                weight_decay: 0.0001
+            learning_rate:
+                class: DecayLearningRate
+                epochs: 1200
+    validation: &validate
+        data_loader:
+            class: DataLoader
+            dataset: ^validate_data
+            batch_size: 1
+            num_workers: 8
+        visualize: false
+        interval: 4500
+        exempt: 1
+
+    logger:
+        class: Logger
+        verbose: false
+        level: info
+        log_interval: 450
+
+    evaluation: *validate
