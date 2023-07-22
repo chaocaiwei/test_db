@@ -56,6 +56,7 @@ def main():
                         type=int, help='The number of accessible gpus')
     parser.add_argument('--data-dir', dest='data_dir', type=str)
     parser.add_argument('--gt-dir', dest='gt_dir', type=str)
+    parser.add_argument('--train_set',  action='store_true')
     parser.set_defaults(debug=False, verbose=False)
 
     args = parser.parse_args()
@@ -67,14 +68,22 @@ def main():
     experiment_args.update(cmd=args)
     experiment = Experiment(experiment_args)
 
+
     Eval(experiment, experiment_args, cmd=args, verbose=args['verbose']).eval(args['visualize'])
 
 
 class Eval:
     def __init__(self, experiment, args, cmd=dict(), verbose=False):
         self.experiment = experiment
+        train_set = cmd['train_set']
+        if train_set:
+            self.data_loaders = experiment.train.data_loader
+        else:
+            self.data_loaders = experiment.evaluation.data_loaders
+
         experiment.evaluation = experiment.validation
-        self.data_loaders = experiment.evaluation.data_loaders
+
+
         self.args = cmd
         self.logger = experiment.logger
         model_saver = experiment.train.model_saver
