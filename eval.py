@@ -63,19 +63,22 @@ def main():
     args = vars(args)
     args = {k: v for k, v in args.items() if v is not None}
 
+    train_set = args['train_set']
+    if train_set:
+        args['batch_size'] = 1
+
     conf = Config()
     experiment_args = conf.compile(conf.load(args['exp']))['Experiment']
     experiment_args.update(cmd=args)
     experiment = Experiment(experiment_args)
 
-
-    Eval(experiment, experiment_args, cmd=args, verbose=args['verbose']).eval(args['visualize'])
+    Eval(experiment, experiment_args, cmd=args, verbose=args['verbose'], train_set=train_set).eval(args['visualize'])
 
 
 class Eval:
-    def __init__(self, experiment, args, cmd=dict(), verbose=False):
+    def __init__(self, experiment, args, cmd=dict(), verbose=False, train_set=False):
         self.experiment = experiment
-        train_set = cmd['train_set']
+
         if train_set:
             self.data_loaders = experiment.train.data_loader
         else:
